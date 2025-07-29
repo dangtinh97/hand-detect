@@ -64,19 +64,23 @@ class MainActivity : AppCompatActivity() {
         resultText = findViewById(R.id.result_text)
         cameraExecutor = Executors.newSingleThreadExecutor()
         val rps = MarkovRPS()
-        val result1 = rps.play("búa")
-        println(result1) // => Result(playerMove=búa, aiMove=bao, result=thua)
-
-        val result2 = rps.play("kéo")
-        println(result2) // => Result(playerMove=búa, aiMove=bao, result=thua)
-        val result3 = rps.play("bao")
-
-        println(result3) // => Result(playerMove=búa, aiMove=bao, result=thua)
-
-        val result4 = rps.play("búa")
-
-        println(result4) // => Result(playerMove=búa, aiMove=bao, result=thua)
-
+//        val result1 = rps.play("búa")
+//        println(result1) // => Result(playerMove=búa, aiMove=bao, result=thua)
+//
+//        val result2 = rps.play("kéo")
+//        println(result2) // => Result(playerMove=búa, aiMove=bao, result=thua)
+//        val result3 = rps.play("bao")
+//
+//        println(result3) // => Result(playerMove=búa, aiMove=bao, result=thua)
+//
+//        val result4 = rps.play("búa")
+//
+//        println(result4) // => Result(playerMove=búa, aiMove=bao, result=thua)
+//
+//        val result5 = rps.play("bao")
+//
+//        println(result5) // => Result(playerMove=búa, aiMove=bao, result=thua)
+        println("AI nên ra: ${rps.predictBestAIMove()}")
 
         if (checkPermissions()) {
             initializeMediaPipe()

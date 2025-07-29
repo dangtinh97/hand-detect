@@ -1,56 +1,56 @@
 package com.vudangtinh.handdetection
 
 class MarkovRPS {
+    private val moves = listOf("búa", "kéo", "bao")
     private val transitions = mutableMapOf<String, MutableMap<String, Int>>()
     private val history = mutableListOf<String>()
-    private val moves = listOf("búa", "kéo", "bao")
 
     init {
-        for (move in moves) {
-            transitions[move] = mutableMapOf()
-            for (next in moves) {
-                transitions[move]!![next] = 0
-            }
+        // Khởi tạo ma trận chuyển trạng thái
+        moves.forEach { move ->
+            transitions[move] = mutableMapOf("búa" to 0, "kéo" to 0, "bao" to 0)
         }
     }
 
+    // Gọi để chơi 1 lượt: nhập vào nước người chơi, trả về kết quả
     fun play(playerMove: String): Result {
-        val aiMove = predictNextMove()
         val lastMove = history.lastOrNull()
         if (lastMove != null) {
-            updateTransition(lastMove, playerMove)
+            transitions[lastMove]?.let {
+                it[playerMove] = it.getOrDefault(playerMove, 0) + 1
+            }
         }
+
+        val predictedPlayerMove = predictNextPlayerMove()
+        val aiMove = counter(predictedPlayerMove)
+
         history.add(playerMove)
+
         val result = judge(playerMove, aiMove)
         return Result(playerMove, aiMove, result)
     }
 
-    private fun predictNextMove(): String {
-        val last = history.lastOrNull()
-        if (last == null || transitions[last].isNullOrEmpty()) {
-            return randomMove()
-        }
-
-        val options = transitions[last]!!
-        val predicted = options.maxByOrNull { it.value }?.key ?: randomMove()
-        return counter(predicted)
+    // Dự đoán nước tiếp theo của người chơi (theo lịch sử)
+    fun predictNextPlayerMove(): String {
+        val last = history.lastOrNull() ?: return moves.random()
+        val freqMap = transitions[last] ?: return moves.random()
+        return freqMap.maxByOrNull { it.value }?.key ?: moves.random()
     }
 
-    private fun updateTransition(prev: String, current: String) {
-        transitions[prev]?.let {
-            it[current] = it.getOrDefault(current, 0) + 1
-        }
+    // Dự đoán nước AI nên ra để khắc chế người chơi
+    fun predictBestAIMove(): String {
+        return counter(predictNextPlayerMove())
     }
 
-    private fun randomMove(): String = moves.random()
-
+    // Nước thắng nước truyền vào
     private fun counter(move: String): String = when (move) {
         "búa" -> "bao"
         "kéo" -> "búa"
         "bao" -> "kéo"
-        else -> randomMove()
+        else -> moves.random()
     }
 
+    // So kết quả
     private fun judge(player: String, ai: String): String = when {
         player == ai -> "hòa"
         player == "búa" && ai == "kéo" -> "thắng"
@@ -59,5 +59,9 @@ class MarkovRPS {
         else -> "thua"
     }
 
+    // Kết quả mỗi lượt chơi
     data class Result(val playerMove: String, val aiMove: String, val result: String)
+
+    // Gọi để in ma trận học được (debug hoặc hiển thị)
+    fun getTransitions(): Map<String, Map<String, Int>> = transitions
 }
