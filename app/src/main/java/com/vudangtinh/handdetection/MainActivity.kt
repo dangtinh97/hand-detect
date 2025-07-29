@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.mediapipe.framework.image.BitmapImageBuilder
+import com.google.mediapipe.tasks.components.containers.NormalizedLandmark
 import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
@@ -42,7 +43,8 @@ class MainActivity : AppCompatActivity() {
     private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) {
             initializeMediaPipe()
-            startCamera()
+//            startCamera()
+            detectStaticImage()
         } else {
             Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show()
         }
@@ -61,11 +63,25 @@ class MainActivity : AppCompatActivity() {
         previewView = findViewById(R.id.preview_view)
         resultText = findViewById(R.id.result_text)
         cameraExecutor = Executors.newSingleThreadExecutor()
+        val rps = MarkovRPS()
+        val result1 = rps.play("búa")
+        println(result1) // => Result(playerMove=búa, aiMove=bao, result=thua)
+
+        val result2 = rps.play("kéo")
+        println(result2) // => Result(playerMove=búa, aiMove=bao, result=thua)
+        val result3 = rps.play("bao")
+
+        println(result3) // => Result(playerMove=búa, aiMove=bao, result=thua)
+
+        val result4 = rps.play("búa")
+
+        println(result4) // => Result(playerMove=búa, aiMove=bao, result=thua)
+
 
         if (checkPermissions()) {
             initializeMediaPipe()
-            startCamera()
-//             detectStaticImage() // Uncomment để kiểm tra với ảnh tĩnh
+//            startCamera()
+             detectStaticImage() // Uncomment để kiểm tra với ảnh tĩnh
         } else {
             requestPermissions()
         }
@@ -118,6 +134,10 @@ class MainActivity : AppCompatActivity() {
     // Xử lý kết quả HandLandmarker
     private fun processResult(result: HandLandmarkerResult, input: com.google.mediapipe.framework.image.MPImage) {
         Log.d(TAG, "Result received, landmarks size: ${result.landmarks().size}")
+        if(result.landmarks().isNotEmpty()){
+            val detet:String = detectGesture(result.landmarks()[0])
+            Log.d("game",detet)
+        }
         val overlay = findViewById<HandOverlayView>(R.id.hand_overlay)
         overlay.updateLandmarks(result.landmarks())
         runOnUiThread {
@@ -168,6 +188,8 @@ class MainActivity : AppCompatActivity() {
                 if (result.landmarks().isEmpty()) {
                     append("No hands detected in static image")
                 } else {
+                    val resultDetect = detectGesture(result.landmarks()[0])
+                    Log.d("game",resultDetect)
                     append("Hands detected in static image:\n")
                     result.landmarks().forEachIndexed { index, landmarks ->
                         append("Hand $index:\n")
@@ -228,7 +250,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+            val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
             try {
                 cameraProvider.unbindAll()
@@ -242,6 +264,26 @@ class MainActivity : AppCompatActivity() {
             }
         }, ContextCompat.getMainExecutor(this))
     }
+
+    fun detectGesture(landmarks: List<NormalizedLandmark>): String {
+        val isFingerExtended = { tipIdx: Int, pipIdx: Int ->
+            landmarks[tipIdx].y() < landmarks[pipIdx].y()
+        }
+
+        val thumb = isFingerExtended(4, 2)
+        val index = isFingerExtended(8, 6)
+        val middle = isFingerExtended(12, 10)
+        val ring = isFingerExtended(16, 14)
+        val pinky = isFingerExtended(20, 18)
+
+        return when {
+            !thumb && !index && !middle && !ring && !pinky -> "búa"
+            index && middle && !ring && !pinky && !thumb -> "kéo"
+            index && middle && ring && pinky -> "bao"
+            else -> "không rõ"
+        }
+    }
+
 
     // Giải phóng tài nguyên
     override fun onDestroy() {
